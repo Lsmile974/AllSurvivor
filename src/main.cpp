@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Window/Event.hpp>
 
 int main(){
     int widthWindow = 800, heightWindow = 600;
@@ -16,6 +17,11 @@ int main(){
             if (event.type == sf::Event::Closed)
                 window.close();
             // D'autres évènements peuvent être gérés ici
+            if (event.type == sf::Event::KeyPressed)
+            {
+                if (event.key.code == sf::Keyboard::Escape)
+                    window.close();
+            }
         }
         // Effacement de l'ancienne frame (framebuffer)
         window.clear(sf::Color::Black);
