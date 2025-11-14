@@ -6,6 +6,7 @@ int main(){
     // Création d'une fenêtre "render"
     sf::RenderWindow window(sf::VideoMode(widthWindow, heightWindow), "AllSurvivor",
                             sf::Style::Default); // Pour un style personnalisé
+    window.setFramerateLimit(60);
     // Boucle principale avec gestion frame par frame
     while (window.isOpen())
     {
