@@ -1,6 +1,7 @@
 #include "Menu/Menu.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Event.hpp>
+#include "Game/Game.h"
 
 namespace Menu
 {
@@ -129,31 +130,9 @@ int run() {
                 {
                     if (selectedButton == 0)
                     {
-                        window.setVisible(false);
-                        sf::RenderWindow gameWindow(sf::VideoMode(widthWindow, heightWindow), "AllSurvivor",
-                                                    sf::Style::Fullscreen);
-                        while (gameWindow.isOpen())
-                        {
-                            sf::Event event;
-                            sf::Clock clock;
-                            while (gameWindow.pollEvent(event))
-                            {
-                                if (event.type == sf::Event::Closed)
-                                    gameWindow.close();
-                                if (event.type == sf::Event::KeyPressed)
-                                {
-                                    if (event.key.code == sf::Keyboard::Escape)
-                                        gameWindow.close();
-                                }
-                            }
-                            if (clock.getElapsedTime().asSeconds() >= 10)
-                            {
-                                gameWindow.close();
-                            }
-                            gameWindow.clear(sf::Color::Black);
-                            gameWindow.display();
-                        }
-                        window.setVisible(true);
+                        //window.setVisible(false);
+                        Game::run(sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height);
+                        //window.setVisible(true);
                     }
                     else if (selectedButton == 1)
                     {
