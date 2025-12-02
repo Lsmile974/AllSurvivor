@@ -6,20 +6,58 @@ namespace Game
 {
 int run(int widthWindow, int heightWindow)
 {
+    sf::Clock clock;
+
+    sf::Texture idleRight;
+    if (!idleRight.loadFromFile("assets/hidle_character_right.png"))
+    {
+        // Gérer l'erreur (fichier introuvable, etc.)
+        return -1;
+    }
+    sf::Texture idleLeft;
+    if (!idleLeft.loadFromFile("assets/hidle_character_left.png"))
+    {
+        // Gérer l'erreur (fichier introuvable, etc.)
+        return -1;
+    }
+    sf::Texture runRight;
+    if (!runRight.loadFromFile("assets/character_running_right.png"))
+    {
+        // Gérer l'erreur (fichier introuvable, etc.)
+        return -1;
+    }
+    sf::Texture runLeft;
+    if (!runLeft.loadFromFile("assets/character_running_left.png"))
+    {
+        // Gérer l'erreur (fichier introuvable, etc.)
+        return -1;
+    }
+
     sf::RenderWindow gameWindow(sf::VideoMode(widthWindow, heightWindow), "AllSurvivor", sf::Style::Fullscreen);
-    gameWindow.setFramerateLimit(60);
+    gameWindow.setFramerateLimit(15);
 
     sf::Event event;
-    sf::Clock clock;
-    sf::RectangleShape testCharacter(sf::Vector2f(100.f, 100.f));
-    testCharacter.setFillColor(sf::Color::White);
-    testCharacter.setOutlineThickness(5.f);
-    testCharacter.setOutlineColor(sf::Color(50, 150, 50));
-    testCharacter.setPosition((widthWindow - testCharacter.getSize().x) / 2,
-                              (heightWindow - testCharacter.getSize().y) / 2);
+    sf::Sprite cepineSprite(idleRight);
+    cepineSprite.setTextureRect(sf::IntRect(0, 0, 160, 160));
+    cepineSprite.setPosition((widthWindow - cepineSprite.getGlobalBounds().width) / 2,
+                             (heightWindow - cepineSprite.getGlobalBounds().height) / 2);
+
+    bool isMoving = false;
+    bool facingRight = true;
+    bool wasMoving = false;
+    bool wasFacingRight = true;
+    int animFrameIndex = 0;
+
 
     while (gameWindow.isOpen())
     {
+        if (isMoving != wasMoving || facingRight != wasFacingRight)
+        {
+            animFrameIndex = 0;
+        }
+        wasFacingRight = facingRight;
+        wasMoving = isMoving;
+        isMoving = false;
         while (gameWindow.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
@@ -30,24 +68,53 @@ int run(int widthWindow, int heightWindow)
                     gameWindow.close();
                 if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::Z)
                 {
-                    testCharacter.move(0.f, -10.f);
+                    isMoving = true;
+                    cepineSprite.setTexture(facingRight ? runRight : runLeft);
+                    cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
+                    cepineSprite.move(0.f, -10.f);
                 }
                 else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S)
                 {
-                    testCharacter.move(0.f, 10.f);
+                    isMoving = true;
+                    cepineSprite.setTexture(facingRight ? runRight : runLeft);
+                    cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
+                    cepineSprite.move(0.f, 10.f);
                 }
                 if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::Q)
                 {
-                    testCharacter.move(-10.f, 0.f);
+                    isMoving = true;
+                    facingRight = false;
+                    cepineSprite.setTexture(runLeft);
+                    cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
+                    cepineSprite.move(-10.f, 0.f);
                 }
                 else if (event.key.code == sf::Keyboard::Right || event.key.code == sf::Keyboard::D)
                 {
-                    testCharacter.move(10.f, 0.f);
+                    isMoving = true;
+                    facingRight = true;
+                    cepineSprite.setTexture(runRight);
+                    cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
+                    cepineSprite.move(10.f, 0.f);
+                }
+                if (animFrameIndex%5 == 0)
+                {
+                    animFrameIndex = 0;
                 }
             }
         }
+        if (!isMoving)
+        {
+            cepineSprite.setTexture(facingRight ? idleRight : idleLeft);
+            cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
+            if (animFrameIndex % 3 == 0)
+            {
+                animFrameIndex = 0;
+            }
+        }
+        animFrameIndex++;
+
         gameWindow.clear(sf::Color::Black);
-        gameWindow.draw(testCharacter);
+        gameWindow.draw(cepineSprite);
         gameWindow.display();
     }
     return 0;
