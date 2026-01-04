@@ -1,10 +1,39 @@
 #include "Game/Game.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Event.hpp>
+#include <random>
 
 namespace Game
 {
-int run(int widthWindow, int heightWindow)
+    Vector::Vector(int x, int y)
+    {
+        this->x = x;
+        this->y = y;
+    }
+    Movement::Movement(Vector direction, float speed)
+    {
+        this->direction = direction;
+        this->speed = speed;
+    }
+    ProjectileShape::ProjectileShape(Vector position, float radius)
+    {
+        this->position = position;
+        this->shape = sf::CircleShape(radius);
+        this->shape.setPosition(static_cast<float>(position.x), static_cast<float>(position.y));
+    }
+    int computeRandomInt(int min, int max)
+    {
+        int8_t randMin = min;
+        int8_t randMax = max;
+
+        // Random generator
+        static std::random_device rd;
+        static std::mt19937 generator(rd());
+        static std::uniform_int_distribution<> distribution(randMin, randMax);
+
+        return distribution(generator);
+    }
+    int run(int widthWindow, int heightWindow)
 {
     sf::Clock clock;
 
