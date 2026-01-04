@@ -19,7 +19,8 @@ namespace Game
     {
         this->position = position;
         this->shape = sf::CircleShape(radius);
-        this->shape.setPosition(static_cast<float>(position.x), static_cast<float>(position.y));
+        this->shape.setPosition(position.x, position.y);
+        this->shape.setFillColor(sf::Color::Red);
     }
     int computeRandomInt(int min, int max)
     {
@@ -77,6 +78,9 @@ namespace Game
     bool wasFacingRight = true;
     int animFrameIndex = 0;
 
+    ProjectileShape randProjectile(Vector(computeRandomInt(0, widthWindow), computeRandomInt(0, heightWindow)), 10.f);
+    Movement projMovement(Vector(widthWindow - randProjectile.position.x, heightWindow - randProjectile.position.y), 10.f);
+
 
     while (gameWindow.isOpen())
     {
@@ -91,6 +95,7 @@ namespace Game
         {
             if (event.type == sf::Event::Closed)
                 gameWindow.close();
+            randProjectile.shape.move((projMovement.direction.x/10), (projMovement.direction.y/10));
             if (event.type == sf::Event::KeyPressed)
             {
                 if (event.key.code == sf::Keyboard::Escape)
@@ -144,6 +149,7 @@ namespace Game
 
         gameWindow.clear(sf::Color::Black);
         gameWindow.draw(cepineSprite);
+        gameWindow.draw(randProjectile.shape);
         gameWindow.display();
     }
     return 0;
