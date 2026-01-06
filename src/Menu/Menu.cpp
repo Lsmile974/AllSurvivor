@@ -90,6 +90,8 @@ int run() {
 
     int selectedButton = 0;
 
+    Game::registerGameComponentsAndSystems();
+
     // Boucle principale avec gestion frame par frame
     while (window.isOpen())
     {
