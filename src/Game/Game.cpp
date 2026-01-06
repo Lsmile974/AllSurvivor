@@ -1,27 +1,21 @@
 #include "Game/Game.h"
+#include "Game/EngineComponent.h"
+#include "Game/Movement.h"
+#include "Game/Collision.h"
+#include <ecs/core.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Event.hpp>
 #include <random>
 
 namespace Game
 {
-    Vector::Vector(int x, int y)
-    {
-        this->x = x;
-        this->y = y;
-    }
-    Movement::Movement(Vector direction, float speed)
-    {
-        this->direction = direction;
-        this->speed = speed;
-    }
-    ProjectileShape::ProjectileShape(Vector position, float radius)
+    /*ProjectileShape::ProjectileShape(Vector position, float radius)
     {
         this->position = position;
         this->shape = sf::CircleShape(radius);
         this->shape.setPosition(position.x, position.y);
         this->shape.setFillColor(sf::Color::Red);
-    }
+    }*/
     int computeRandomInt(int min, int max)
     {
         int8_t randMin = min;
@@ -36,6 +30,16 @@ namespace Game
     }
     int run(int widthWindow, int heightWindow)
 {
+     ecs::register_component<EngineComponent::Position>();
+     ecs::register_component<EngineComponent::Motion>();
+     ecs::register_component<EngineComponent::BoundingBox>();
+
+     auto movement = std::make_shared<Movement::MovementSystem>();
+     auto collision = std::make_shared<Collision::CollisionSystem>();
+
+     ecs::register_system<Movement::MovementSystem>(movement, ecs::create_signature<EngineComponent::Position, EngineComponent::Motion>());
+     ecs::register_system<Collision::CollisionSystem>(collision, ecs::create_signature<EngineComponent::Position, EngineComponent::BoundingBox>());
+
     sf::Clock clock;
 
     sf::Texture idleRight;
@@ -71,6 +75,10 @@ namespace Game
     cepineSprite.setTextureRect(sf::IntRect(0, 0, 160, 160));
     cepineSprite.setPosition((widthWindow - cepineSprite.getGlobalBounds().width) / 2,
                              (heightWindow - cepineSprite.getGlobalBounds().height) / 2);
+    const ecs::Entity player = ecs::create_entity();
+    ecs::add_components(player, EngineComponent::Position{cepineSprite.getPosition().x, cepineSprite.getPosition().y},
+                        EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 1.f},
+        EngineComponent::BoundingBox{cepineSprite.getGlobalBounds().width, cepineSprite.getGlobalBounds().height});
 
     bool isMoving = false;
     bool facingRight = true;
@@ -78,8 +86,12 @@ namespace Game
     bool wasFacingRight = true;
     int animFrameIndex = 0;
 
-    ProjectileShape randProjectile(Vector(computeRandomInt(0, widthWindow), computeRandomInt(0, heightWindow)), 10.f);
-    Movement projMovement(Vector(widthWindow - randProjectile.position.x, heightWindow - randProjectile.position.y), 10.f);
+    const ecs::Entity projectile = ecs::create_entity();
+    ecs::add_components(projectile, EngineComponent::Position{0.f, 0.f},
+                        EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 1.f},
+                        EngineComponent::BoundingBox{10.f, 10.f});
+    /*ProjectileShape randProjectile(Vector(computeRandomInt(0, widthWindow), computeRandomInt(0, heightWindow)), 10.f);
+    Movement projMovement(Vector(widthWindow - randProjectile.position.x, heightWindow - randProjectile.position.y), 10.f);*/
 
 
     while (gameWindow.isOpen())
@@ -95,7 +107,7 @@ namespace Game
         {
             if (event.type == sf::Event::Closed)
                 gameWindow.close();
-            randProjectile.shape.move((projMovement.direction.x/10), (projMovement.direction.y/10));
+            //randProjectile.shape.move((projMovement.direction.x/10), (projMovement.direction.y/10));
             if (event.type == sf::Event::KeyPressed)
             {
                 if (event.key.code == sf::Keyboard::Escape)
@@ -149,7 +161,7 @@ namespace Game
 
         gameWindow.clear(sf::Color::Black);
         gameWindow.draw(cepineSprite);
-        gameWindow.draw(randProjectile.shape);
+        //gameWindow.draw(randProjectile.shape);
         gameWindow.display();
     }
     return 0;
