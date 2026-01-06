@@ -9,10 +9,10 @@
 
 namespace RenderComponent
 {
-	struct GAME_EXPORT RebderShape
+	struct GAME_EXPORT RenderShape
 {
 	sf::Sprite sprite;
-    RebderShape(const sf::Texture& texture)
+    RenderShape(const sf::Texture& texture)
 	{
 		this->sprite.setTexture(texture);
 	}

@@ -2,6 +2,8 @@
 #include "Game/EngineComponent.h"
 #include "Game/Movement.h"
 #include "Game/Collision.h"
+#include "Game/RenderComponent.h"
+#include "Game/Spawn.h"
 #include "ecs/core.hpp"
 #include "ecs/internal/system_manager.hpp"
 #include <SFML/Graphics.hpp>
@@ -23,10 +25,13 @@ namespace Game
         ecs::register_component<EngineComponent::Position>();
         ecs::register_component<EngineComponent::Motion>();
         ecs::register_component<EngineComponent::BoundingBox>();
+        ecs::register_component<RenderComponent::RenderShape>();
         auto movement = std::make_shared<Movement::MovementSystem>();
         auto collision = std::make_shared<Collision::CollisionSystem>();
+        auto spawn = std::make_shared<Spawn::SpawnSystem>();
         ecs::register_system<Movement::MovementSystem>(movement, ecs::create_signature<EngineComponent::Position, EngineComponent::Motion>());
         ecs::register_system<Collision::CollisionSystem>(collision, ecs::create_signature<EngineComponent::Position, EngineComponent::BoundingBox>());
+        ecs::register_system<Spawn::SpawnSystem>(spawn,ecs::create_signature<EngineComponent::Position, EngineComponent::Motion, EngineComponent::BoundingBox>());
     }
     int run(int widthWindow, int heightWindow)
 {
@@ -102,10 +107,8 @@ namespace Game
         {
             if (event.type == sf::Event::Closed)
                 gameWindow.close();
-            //randProjectile.move((projMovement.direction.x/10), (projMovement.direction.y/10));
-            movement->changeDirection(
-                projectile, {(playerPos.x - randProjectilePos.x) / 10, (playerPos.y - randProjectilePos.y) / 10});
-             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+            movement->changeDirection(projectile, {(playerPos.x - randProjectilePos.x) / 10, (playerPos.y - randProjectilePos.y) / 10});
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
                     gameWindow.close();
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
             {
@@ -158,6 +161,7 @@ namespace Game
         cepineSprite.setPosition(playerPos.x, playerPos.y);
         gameWindow.clear(sf::Color::Black);
         gameWindow.draw(cepineSprite);
+        //collision->detectCollisions(player);
         randProjectile.setPosition(randProjectilePos.x, randProjectilePos.y);
         gameWindow.draw(randProjectile);
         gameWindow.display();
