@@ -3,6 +3,7 @@
 #include "Game/Movement.h"
 #include "Game/Collision.h"
 #include "Game/RenderComponent.h"
+#include "Game/RenderSystem.h"
 #include "Game/Spawn.h"
 #include "ecs/core.hpp"
 #include "ecs/internal/system_manager.hpp"
@@ -29,9 +30,11 @@ namespace Game
         auto movement = std::make_shared<Movement::MovementSystem>();
         auto collision = std::make_shared<Collision::CollisionSystem>();
         auto spawn = std::make_shared<Spawn::SpawnSystem>();
+        auto render = std::make_shared<RenderSystem::RenderSystem>();
         ecs::register_system<Movement::MovementSystem>(movement, ecs::create_signature<EngineComponent::Position, EngineComponent::Motion>());
         ecs::register_system<Collision::CollisionSystem>(collision, ecs::create_signature<EngineComponent::Position, EngineComponent::BoundingBox>());
         ecs::register_system<Spawn::SpawnSystem>(spawn,ecs::create_signature<EngineComponent::Position, EngineComponent::Motion, EngineComponent::BoundingBox>());
+        ecs::register_system<RenderSystem::RenderSystem>(render, ecs::create_signature<EngineComponent::Position, RenderComponent::RenderShape>());
     }
     int run(int widthWindow, int heightWindow)
 {
