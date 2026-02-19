@@ -18,7 +18,7 @@ namespace RenderSystem
 		{
 			for (const ecs::Entity entity : entities())
 			{
-				const auto& renderShape = ecs::get_component<RenderComponent::RenderShape>(entity);
+				auto& renderShape = ecs::get_component<RenderComponent::RenderShape>(entity);
 				const auto& position = ecs::get_component<EngineComponent::Position>(entity);
 				renderShape.sprite.setPosition(position.x, position.y);
                 window.draw(renderShape.sprite);

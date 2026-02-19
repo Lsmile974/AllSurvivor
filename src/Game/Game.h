@@ -9,7 +9,7 @@
 
 namespace Game
 {
-    GAME_EXPORT float computeRandomInt(float min, float max);
+    GAME_EXPORT float computeRandomInt(int min, int max);
 	GAME_EXPORT int run(int widthWindow, int heightWindow);
     GAME_EXPORT void registerGameComponentsAndSystems();
-    }
+}

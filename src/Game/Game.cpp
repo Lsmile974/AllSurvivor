@@ -13,13 +13,12 @@
 
 namespace Game
 {
-    float computeRandomInt(float min, float max)
+    float computeRandomInt(int min, int max)
     {
         static std::random_device rd;
         static std::mt19937 gen(rd());
         std::uniform_int_distribution<> distrib(min, max);
-
-        return distrib(gen);
+        return static_cast<float>(distrib(gen));
     }
     void registerGameComponentsAndSystems()
     {
