@@ -28,4 +28,6 @@ struct GAME_EXPORT BoundingBox final
     float width;
     float height;
 };
+struct GAME_EXPORT PlayerTag{};
+struct GAME_EXPORT EnemyTag{};
 }

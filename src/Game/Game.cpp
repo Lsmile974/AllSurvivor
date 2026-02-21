@@ -26,6 +26,8 @@ namespace Game
         ecs::register_component<EngineComponent::Motion>();
         ecs::register_component<EngineComponent::BoundingBox>();
         ecs::register_component<RenderComponent::RenderShape>();
+        ecs::register_component<EngineComponent::PlayerTag>();
+        ecs::register_component<EngineComponent::EnemyTag>();
         auto movement = std::make_shared<Movement::MovementSystem>();
         auto collision = std::make_shared<Collision::CollisionSystem>();
         auto spawn = std::make_shared<Spawn::SpawnSystem>();
@@ -39,6 +41,7 @@ namespace Game
 {
     auto movement = ecs::get_system<Movement::MovementSystem>();
     auto collision = ecs::get_system<Collision::CollisionSystem>();
+    auto spawn = ecs::get_system<Spawn::SpawnSystem>();
 
     sf::Clock clock;
 
@@ -79,7 +82,8 @@ namespace Game
     ecs::add_components(
         player, EngineComponent::Position{cepineSprite.getPosition().x, cepineSprite.getPosition().y},
         EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 10.f},
-        EngineComponent::BoundingBox{cepineSprite.getGlobalBounds().width, cepineSprite.getGlobalBounds().height});
+        EngineComponent::BoundingBox{cepineSprite.getGlobalBounds().width, cepineSprite.getGlobalBounds().height},
+        EngineComponent::PlayerTag{});
 
     bool isMoving = false;
     bool facingRight = true;
@@ -90,19 +94,15 @@ namespace Game
     const float animFrameDuration = 0.15f;
     const int idleFrameCount = 3;
     const int runFrameCount = 5;
+    float spawnTimer = 0.f;
+    const float spawnInterval = 2.f;
 
-    const ecs::Entity projectile = ecs::create_entity();
-    ecs::add_components(
-        projectile, EngineComponent::Position{computeRandomInt(0, widthWindow), computeRandomInt(0, heightWindow)},
-        EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 5.f}, EngineComponent::BoundingBox{10.f, 10.f});
-
-    sf::CircleShape randProjectile(10);
-    randProjectile.setFillColor(sf::Color::Red);
-    const auto& randProjectilePos = ecs::get_component<EngineComponent::Position>(projectile);
-    const auto& playerPos = ecs::get_component<EngineComponent::Position>(player);
+    sf::CircleShape enemyShape(10.f);
+    enemyShape.setFillColor(sf::Color::Red);
 
     while (gameWindow.isOpen())
     {
+        const auto& playerPos = ecs::get_component<EngineComponent::Position>(player);
         float dt = clock.restart().asSeconds();
         if (isMoving != wasMoving || facingRight != wasFacingRight)
         {
@@ -120,8 +120,6 @@ namespace Game
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
             gameWindow.close();
-
-        movement->changeDirection(projectile, {(playerPos.x - randProjectilePos.x) / 10, (playerPos.y - randProjectilePos.y) / 10});
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
         {
@@ -148,6 +146,24 @@ namespace Game
 
         if (!isMoving)
             movement->stopMovement(player);
+
+        spawnTimer += dt;
+        if (spawnTimer >= spawnInterval)
+        {
+            spawnTimer = 0.f;
+            spawn->spawnEnemy(widthWindow, heightWindow, playerPos);
+        }
+
+        for (const ecs::Entity entity : spawn->get_entities())
+        {
+            if (!ecs::has_component<EngineComponent::EnemyTag>(entity))
+            {
+                continue;
+            }
+            const auto& enemyPos = ecs::get_component<EngineComponent::Position>(entity);
+            movement->changeDirection(entity, {(playerPos.x - enemyPos.x) / 10.f, (playerPos.y - enemyPos.y) / 10.f});
+        }
+
         animTimer += dt;
         int frameCount = isMoving ? runFrameCount : idleFrameCount;
         if (animTimer >= animFrameDuration)
@@ -165,9 +181,19 @@ namespace Game
         cepineSprite.setPosition(playerPos.x, playerPos.y);
         gameWindow.clear(sf::Color::Black);
         gameWindow.draw(cepineSprite);
-        //collision->detectCollisions(player);
-        randProjectile.setPosition(randProjectilePos.x, randProjectilePos.y);
-        gameWindow.draw(randProjectile);
+
+        for (const ecs::Entity entity : spawn->get_entities())
+        {
+            if (!ecs::has_component<EngineComponent::EnemyTag>(entity))
+            {
+                continue;
+            }
+            const auto& enemyPos = ecs::get_component<EngineComponent::Position>(entity);
+            enemyShape.setPosition(enemyPos.x, enemyPos.y);
+            gameWindow.draw(enemyShape);
+        }
+
+        // collision->detectCollisions(player);
         gameWindow.display();
     }
     return 0;
