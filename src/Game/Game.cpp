@@ -68,7 +68,7 @@ namespace Game
     }
 
     sf::RenderWindow gameWindow(sf::VideoMode(widthWindow, heightWindow), "AllSurvivor", sf::Style::Fullscreen);
-    gameWindow.setFramerateLimit(15);
+    gameWindow.setFramerateLimit(60);
 
     sf::Event event;
     sf::Sprite cepineSprite(idleRight);
@@ -76,8 +76,9 @@ namespace Game
     cepineSprite.setPosition((widthWindow - cepineSprite.getGlobalBounds().width) / 2,
                              (heightWindow - cepineSprite.getGlobalBounds().height) / 2);
     const ecs::Entity player = ecs::create_entity();
-    ecs::add_components(player, EngineComponent::Position{cepineSprite.getPosition().x, cepineSprite.getPosition().y},
-                        EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 10.f},
+    ecs::add_components(
+        player, EngineComponent::Position{cepineSprite.getPosition().x, cepineSprite.getPosition().y},
+        EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 10.f},
         EngineComponent::BoundingBox{cepineSprite.getGlobalBounds().width, cepineSprite.getGlobalBounds().height});
 
     bool isMoving = false;
@@ -85,12 +86,16 @@ namespace Game
     bool wasMoving = false;
     bool wasFacingRight = true;
     int animFrameIndex = 0;
+    float animTimer = 0.f;
+    const float animFrameDuration = 0.15f;
+    const int idleFrameCount = 3;
+    const int runFrameCount = 5;
 
     const ecs::Entity projectile = ecs::create_entity();
     ecs::add_components(
         projectile, EngineComponent::Position{computeRandomInt(0, widthWindow), computeRandomInt(0, heightWindow)},
-                        EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 5.f},
-                        EngineComponent::BoundingBox{10.f, 10.f});
+        EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 5.f}, EngineComponent::BoundingBox{10.f, 10.f});
+
     sf::CircleShape randProjectile(10);
     randProjectile.setFillColor(sf::Color::Red);
     const auto& randProjectilePos = ecs::get_component<EngineComponent::Position>(projectile);
@@ -98,9 +103,11 @@ namespace Game
 
     while (gameWindow.isOpen())
     {
+        float dt = clock.restart().asSeconds();
         if (isMoving != wasMoving || facingRight != wasFacingRight)
         {
             animFrameIndex = 0;
+            animTimer = 0.f;
         }
         wasFacingRight = facingRight;
         wasMoving = isMoving;
@@ -109,57 +116,52 @@ namespace Game
         {
             if (event.type == sf::Event::Closed)
                 gameWindow.close();
-            movement->changeDirection(projectile, {(playerPos.x - randProjectilePos.x) / 10, (playerPos.y - randProjectilePos.y) / 10});
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
-                    gameWindow.close();
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-            {
-                isMoving = true;
-                cepineSprite.setTexture(facingRight ? runRight : runLeft);
-                cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
-                movement->changeDirection(player, {0.f, -10.f});
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-            {
-                isMoving = true;
-                cepineSprite.setTexture(facingRight ? runRight : runLeft);
-                cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
-                movement->changeDirection(player, {0.f, 10.f});
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-            {
-                isMoving = true;
-                facingRight = false;
-                cepineSprite.setTexture(runLeft);
-                cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
-                movement->changeDirection(player, {-10.f, 0.f});
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-            {
-                isMoving = true;
-                facingRight = true;
-                cepineSprite.setTexture(runRight);
-                cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
-                movement->changeDirection(player, {10.f, 0.f});
-            }
-            if (animFrameIndex % 5 == 0)
-            {
-                animFrameIndex = 0;
-            }
         }
-        if (!isMoving)
-        {
-            movement->stopMovement(player);
-            cepineSprite.setTexture(facingRight ? idleRight : idleLeft);
-            cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
-            if (animFrameIndex % 3 == 0)
-            {
-                animFrameIndex = 0;
-            }
-        }
-        animFrameIndex++;
 
-        movement->updatePositions(clock.restart().asSeconds());
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+            gameWindow.close();
+
+        movement->changeDirection(projectile, {(playerPos.x - randProjectilePos.x) / 10, (playerPos.y - randProjectilePos.y) / 10});
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+        {
+            isMoving = true;
+            movement->changeDirection(player, {0.f, -10.f});
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+        {
+            isMoving = true;
+            movement->changeDirection(player, {0.f, 10.f});
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+        {
+            isMoving = true;
+            facingRight = false;
+            movement->changeDirection(player, {-10.f, 0.f});
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+        {
+            isMoving = true;
+            facingRight = true;
+            movement->changeDirection(player, {10.f, 0.f});
+        }
+
+        if (!isMoving)
+            movement->stopMovement(player);
+        animTimer += dt;
+        int frameCount = isMoving ? runFrameCount : idleFrameCount;
+        if (animTimer >= animFrameDuration)
+        {
+            animTimer = 0.f;
+            animFrameIndex = (animFrameIndex + 1) % frameCount;
+        }
+        if (isMoving)
+            cepineSprite.setTexture(facingRight ? runRight : runLeft);
+        else
+            cepineSprite.setTexture(facingRight ? idleRight : idleLeft);
+
+        cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
+        movement->updatePositions(dt);
         cepineSprite.setPosition(playerPos.x, playerPos.y);
         gameWindow.clear(sf::Color::Black);
         gameWindow.draw(cepineSprite);

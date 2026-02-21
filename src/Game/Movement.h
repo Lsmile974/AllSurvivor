@@ -23,11 +23,11 @@ public:
     void changeDirection(ecs::Entity entity, const EngineComponent::Vector& newDirection)
     {
         auto& motion = ecs::get_component<EngineComponent::Motion>(entity);
-        if (motion.direction.x < 30.f && motion.direction.x > -30.f)
+        if (motion.direction.x + newDirection.x < 30.f && motion.direction.x + newDirection.x > -30.f)
         {
             motion.direction.x += newDirection.x;
         }
-        if (motion.direction.y < 30.f && motion.direction.y > -30.f)
+        if (motion.direction.y + newDirection.y < 30.f && motion.direction.y + newDirection.y > -30.f)
         {
             motion.direction.y += newDirection.y;
         }
