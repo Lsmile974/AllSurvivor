@@ -28,6 +28,7 @@ namespace Game
         ecs::register_component<RenderComponent::RenderShape>();
         ecs::register_component<EngineComponent::PlayerTag>();
         ecs::register_component<EngineComponent::EnemyTag>();
+        ecs::register_component<EngineComponent::ProjectileTag>();
         auto movement = std::make_shared<Movement::MovementSystem>();
         auto collision = std::make_shared<Collision::CollisionSystem>();
         auto spawn = std::make_shared<Spawn::SpawnSystem>();
@@ -193,7 +194,7 @@ namespace Game
             gameWindow.draw(enemyShape);
         }
 
-        // collision->detectCollisions(player);
+        collision->detectCollisions(player);
         gameWindow.display();
     }
     return 0;

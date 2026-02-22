@@ -30,4 +30,5 @@ struct GAME_EXPORT BoundingBox final
 };
 struct GAME_EXPORT PlayerTag{};
 struct GAME_EXPORT EnemyTag{};
+struct GAME_EXPORT ProjectileTag{};
 }
