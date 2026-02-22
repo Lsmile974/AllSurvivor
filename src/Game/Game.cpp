@@ -27,6 +27,8 @@ namespace Game
         ecs::register_component<EngineComponent::BoundingBox>();
         ecs::register_component<RenderComponent::RenderShape>();
         ecs::register_component<EngineComponent::EntityTypeTag>();
+        ecs::register_component<RenderComponent::Animation>();
+        ecs::register_component<RenderComponent::FacingTextures>();
         auto movement = std::make_shared<Movement::MovementSystem>();
         auto collision = std::make_shared<Collision::CollisionSystem>();
         auto spawn = std::make_shared<Spawn::SpawnSystem>();
@@ -41,6 +43,7 @@ namespace Game
     auto movement = ecs::get_system<Movement::MovementSystem>();
     auto collision = ecs::get_system<Collision::CollisionSystem>();
     auto spawn = ecs::get_system<Spawn::SpawnSystem>();
+    auto render = ecs::get_system<RenderSystem::RenderSystem>();
 
     sf::Clock clock;
 
@@ -64,6 +67,18 @@ namespace Game
     }
     sf::Texture runLeft;
     if (!runLeft.loadFromFile("assets/character_running_left.png"))
+    {
+        // Gérer l'erreur (fichier introuvable, etc.)
+        return -1;
+    }
+    sf::Texture larveLeft;
+    if (!larveLeft.loadFromFile("assets/larve_going_left.png"))
+    {
+        // Gérer l'erreur (fichier introuvable, etc.)
+        return -1;
+    }
+    sf::Texture larveRight;
+    if (!larveRight.loadFromFile("assets/larve_going_right.png"))
     {
         // Gérer l'erreur (fichier introuvable, etc.)
         return -1;
@@ -155,7 +170,7 @@ namespace Game
         if (spawnTimer >= spawnInterval)
         {
             spawnTimer = 0.f;
-            spawn->spawnEnemy(widthWindow, heightWindow, playerPos);
+            spawn->spawnEnemy(widthWindow, heightWindow, playerPos, larveLeft, larveRight);
         }
 
         projectileTimer += dt;
@@ -172,7 +187,12 @@ namespace Game
                 continue;
             }
             const auto& enemyPos = ecs::get_component<EngineComponent::Position>(entity);
-            movement->changeDirection(entity, {(playerPos.x - enemyPos.x) / 10.f, (playerPos.y - enemyPos.y) / 10.f});
+            float dx = playerPos.x - enemyPos.x;
+            float dy = playerPos.y - enemyPos.y;
+            movement->changeDirection(entity, {dx / 10.f, dy / 10.f});
+            auto& shape = ecs::get_component<RenderComponent::RenderShape>(entity);
+            const auto& facing = ecs::get_component<RenderComponent::FacingTextures>(entity);
+            shape.sprite.setTexture(dx >= 0.f ? *facing.right : *facing.left);
         }
 
         animTimer += dt;
@@ -191,6 +211,8 @@ namespace Game
         movement->updatePositions(dt);
         gameWindow.clear(sf::Color::Black);
         
+        spawn->removeOutOfBounds(widthWindow, heightWindow);
+        collision->detectCollisions(player);
 
         for (const ecs::Entity entity : spawn->get_entities())
         {
@@ -200,15 +222,6 @@ namespace Game
                     cepineSprite.setPosition(playerPos.x, playerPos.y);
                     gameWindow.draw(cepineSprite);
                     break;
-
-                case EngineComponent::EntityType::Enemy:
-                {
-                    const auto& enemyPos = ecs::get_component<EngineComponent::Position>(entity);
-                    enemyShape.setPosition(enemyPos.x, enemyPos.y);
-                    gameWindow.draw(enemyShape);
-                    break;
-                }
-
                 case EngineComponent::EntityType::Projectile:
                 {
                     const auto& projPos = ecs::get_component<EngineComponent::Position>(entity);
@@ -219,9 +232,7 @@ namespace Game
             }
             
         }
-
-        spawn->removeOutOfBounds(widthWindow, heightWindow);
-        collision->detectCollisions(player);
+        render->renderEntities(gameWindow, dt);
         gameWindow.display();
     }
     return 0;

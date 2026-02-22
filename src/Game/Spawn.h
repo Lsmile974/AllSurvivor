@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <random>
+#include <cmath>
 
 #include "game_export.h"
 #include "Game/EngineComponent.h"
@@ -29,7 +30,8 @@ inline int randomInt(int min, int max)
 class GAME_EXPORT SpawnSystem final : public ecs::System
 {
 public:
-    void spawnEnemy(int widthWindow, int heightWindow, const EngineComponent::Position& playerPos)
+    void spawnEnemy(int widthWindow, int heightWindow, const EngineComponent::Position& playerPos,
+                    const sf::Texture& textureLeft, const sf::Texture& textureRight)
     {
         float x, y;
 
@@ -56,11 +58,17 @@ public:
         float dx = playerPos.x - x;
         float dy = playerPos.y - y;
 
+        const sf::Texture& initialTexture = (dx >= 0.f) ? textureRight : textureLeft;
+        RenderComponent::RenderShape shape(initialTexture);
+        shape.sprite.setTextureRect(sf::IntRect(0, 0, 16, 16));
+
         ecs::Entity entity = ecs::create_entity();
         ecs::add_components(entity, EngineComponent::Position{x, y},
                             EngineComponent::Motion{EngineComponent::Vector{dx / 10.f, dy / 10.f}, 5.f},
                             EngineComponent::BoundingBox{10.f, 10.f},
-                            EngineComponent::EntityTypeTag{EngineComponent::EntityType::Enemy});
+                            EngineComponent::EntityTypeTag{EngineComponent::EntityType::Enemy},
+                            RenderComponent::Animation{0, 0.f, 0.15f, 4, 16, 16},
+                            RenderComponent::FacingTextures{&textureLeft, &textureRight}, std::move(shape));
     }
 
     void spawnProjectile(const EngineComponent::Position& playerPos, float playerWidth, float playerHeight)
