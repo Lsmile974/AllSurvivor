@@ -28,7 +28,14 @@ struct GAME_EXPORT BoundingBox final
     float width;
     float height;
 };
-struct GAME_EXPORT PlayerTag{};
-struct GAME_EXPORT EnemyTag{};
-struct GAME_EXPORT ProjectileTag{};
+enum class GAME_EXPORT EntityType
+{
+    Player,
+    Enemy,
+    Projectile
+};
+struct GAME_EXPORT EntityTypeTag
+{
+    EntityType type;
+};
 }

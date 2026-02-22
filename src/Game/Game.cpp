@@ -26,9 +26,7 @@ namespace Game
         ecs::register_component<EngineComponent::Motion>();
         ecs::register_component<EngineComponent::BoundingBox>();
         ecs::register_component<RenderComponent::RenderShape>();
-        ecs::register_component<EngineComponent::PlayerTag>();
-        ecs::register_component<EngineComponent::EnemyTag>();
-        ecs::register_component<EngineComponent::ProjectileTag>();
+        ecs::register_component<EngineComponent::EntityTypeTag>();
         auto movement = std::make_shared<Movement::MovementSystem>();
         auto collision = std::make_shared<Collision::CollisionSystem>();
         auto spawn = std::make_shared<Spawn::SpawnSystem>();
@@ -84,7 +82,7 @@ namespace Game
         player, EngineComponent::Position{cepineSprite.getPosition().x, cepineSprite.getPosition().y},
         EngineComponent::Motion{EngineComponent::Vector(0.f, 0.f), 10.f},
         EngineComponent::BoundingBox{cepineSprite.getGlobalBounds().width, cepineSprite.getGlobalBounds().height},
-        EngineComponent::PlayerTag{});
+        EngineComponent::EntityTypeTag{EngineComponent::EntityType::Player});
 
     bool isMoving = false;
     bool facingRight = true;
@@ -97,13 +95,18 @@ namespace Game
     const int runFrameCount = 5;
     float spawnTimer = 0.f;
     const float spawnInterval = 2.f;
+    float projectileTimer = 0.f;
+    const float projectileInterval = 0.5f;
 
     sf::CircleShape enemyShape(10.f);
     enemyShape.setFillColor(sf::Color::Red);
+    sf::CircleShape projectileShape(4.f);
+    projectileShape.setFillColor(sf::Color::Yellow);
 
     while (gameWindow.isOpen())
     {
         const auto& playerPos = ecs::get_component<EngineComponent::Position>(player);
+        const auto& playerBox = ecs::get_component<EngineComponent::BoundingBox>(player);
         float dt = clock.restart().asSeconds();
         if (isMoving != wasMoving || facingRight != wasFacingRight)
         {
@@ -155,9 +158,16 @@ namespace Game
             spawn->spawnEnemy(widthWindow, heightWindow, playerPos);
         }
 
+        projectileTimer += dt;
+        if (projectileTimer >= projectileInterval)
+        {
+            projectileTimer = 0.f;
+            spawn->spawnProjectile(playerPos, playerBox.width, playerBox.height);
+        }
+
         for (const ecs::Entity entity : spawn->get_entities())
         {
-            if (!ecs::has_component<EngineComponent::EnemyTag>(entity))
+            if (ecs::get_component<EngineComponent::EntityTypeTag>(entity).type != EngineComponent::EntityType::Enemy)
             {
                 continue;
             }
@@ -179,21 +189,38 @@ namespace Game
 
         cepineSprite.setTextureRect(sf::IntRect(animFrameIndex * 160, 0, 160, 160));
         movement->updatePositions(dt);
-        cepineSprite.setPosition(playerPos.x, playerPos.y);
         gameWindow.clear(sf::Color::Black);
-        gameWindow.draw(cepineSprite);
+        
 
         for (const ecs::Entity entity : spawn->get_entities())
         {
-            if (!ecs::has_component<EngineComponent::EnemyTag>(entity))
+            switch (ecs::get_component<EngineComponent::EntityTypeTag>(entity).type)
             {
-                continue;
+                case EngineComponent::EntityType::Player:
+                    cepineSprite.setPosition(playerPos.x, playerPos.y);
+                    gameWindow.draw(cepineSprite);
+                    break;
+
+                case EngineComponent::EntityType::Enemy:
+                {
+                    const auto& enemyPos = ecs::get_component<EngineComponent::Position>(entity);
+                    enemyShape.setPosition(enemyPos.x, enemyPos.y);
+                    gameWindow.draw(enemyShape);
+                    break;
+                }
+
+                case EngineComponent::EntityType::Projectile:
+                {
+                    const auto& projPos = ecs::get_component<EngineComponent::Position>(entity);
+                    projectileShape.setPosition(projPos.x, projPos.y);
+                    gameWindow.draw(projectileShape);
+                    break;
+                }
             }
-            const auto& enemyPos = ecs::get_component<EngineComponent::Position>(entity);
-            enemyShape.setPosition(enemyPos.x, enemyPos.y);
-            gameWindow.draw(enemyShape);
+            
         }
 
+        spawn->removeOutOfBounds(widthWindow, heightWindow);
         collision->detectCollisions(player);
         gameWindow.display();
     }

@@ -21,17 +21,39 @@ public:
         float widthMax = playerPos.x + playerBox.width;
         float heightMin = playerPos.y;
         float heightMax = playerPos.y + playerBox.height;
-        for (const ecs::Entity entity : entities())
+        for (const ecs::Entity enemy : entities())
         {
-            if (ecs::has_component<EngineComponent::PlayerTag>(entity))
+            if (ecs::get_component<EngineComponent::EntityTypeTag>(enemy).type != EngineComponent::EntityType::Enemy)
             {
                 continue;
             }
-            const auto& box = ecs::get_component<EngineComponent::BoundingBox>(entity);
-            const auto& pos = ecs::get_component<EngineComponent::Position>(entity);
-            if (widthMin < pos.x + box.width && widthMax > pos.x && heightMin < pos.y + box.height && heightMax > pos.y)
+            const auto& enemyBox = ecs::get_component<EngineComponent::BoundingBox>(enemy);
+            const auto& enemyPos = ecs::get_component<EngineComponent::Position>(enemy);
+            if (widthMin < enemyPos.x + enemyBox.width && widthMax > enemyPos.x &&
+                heightMin < enemyPos.y + enemyBox.height && heightMax > enemyPos.y)
             {
-                to_destroy.push_back(entity);
+                to_destroy.push_back(enemy);
+                continue;
+            }
+            for (const ecs::Entity projectile : entities())
+            {
+                if (ecs::get_component<EngineComponent::EntityTypeTag>(projectile).type
+                    != EngineComponent::EntityType::Projectile)
+                    continue;
+
+                const auto& projBox = ecs::get_component<EngineComponent::BoundingBox>(projectile);
+                const auto& projPos = ecs::get_component<EngineComponent::Position>(projectile);
+
+                if (projPos.x                  < enemyPos.x + enemyBox.width  &&
+                    projPos.x + projBox.width  > enemyPos.x                   &&
+                    projPos.y                  < enemyPos.y + enemyBox.height  &&
+                    projPos.y + projBox.height > enemyPos.y)
+                {
+                    if (std::find(to_destroy.begin(), to_destroy.end(), enemy) == to_destroy.end())
+                        to_destroy.push_back(enemy);
+                    if (std::find(to_destroy.begin(), to_destroy.end(), projectile) == to_destroy.end())
+                        to_destroy.push_back(projectile);
+                }
             }
         }
 
